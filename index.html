@@ -3,35 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>معرض ميار - إدارة المخزون والمبيعات</title>
+    <title>نظام إدارة معرض ميار الاحترافي</title>
     <style>
         :root {
-            --primary: #0b2545; /* أزرق داكن */
+            --primary: #0b2545; /* أزرق داكن لمعرض ميار */
             --accent: #134074;
             --bg: #f4f6f9;
             --card-bg: #ffffff;
             --text: #333333;
             --border: #e2e8f0;
+            --success: #2e7d32;
+            --danger: #c62828;
         }
         body {
             font-family: 'Cairo', Tahoma, sans-serif;
             background-color: var(--bg);
             color: var(--text);
             margin: 0;
-            padding: 20px;
+            padding: 15px;
         }
         .container {
-            max-width: 800px;
+            max-width: 950px;
             margin: 0 auto;
             background: var(--card-bg);
             padding: 20px;
             border-radius: 12px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
-        h2 {
+        h2, h3 {
             color: var(--primary);
             text-align: center;
-            margin-bottom: 25px;
+        }
+        .tabs {
+            display: flex;
+            gap: 5px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--border);
+            padding-bottom: 10px;
+            overflow-x: auto;
+        }
+        .tab-btn {
+            background: #eef2f7;
+            border: none;
+            padding: 10px 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            color: var(--primary);
+            white-space: nowrap;
+            font-size: 14px;
+        }
+        .tab-btn.active {
+            background: var(--primary);
+            color: white;
+        }
+        .section {
+            display: none;
+        }
+        .section.active {
+            display: block;
         }
         .form-group {
             margin-bottom: 15px;
@@ -41,27 +71,28 @@
             margin-bottom: 5px;
             font-weight: bold;
             color: var(--primary);
+            font-size: 14px;
         }
-        input, select, button {
+        input, select, textarea, button {
             width: 100%;
             padding: 10px;
             border: 1px solid var(--border);
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             box-sizing: border-box;
         }
-        input:focus, select:focus {
+        input:focus, select:focus, textarea:focus {
             border-color: var(--primary);
             outline: none;
         }
-        .dimensions-grid {
+        .dimensions-grid, .row-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 10px;
             background: #eef2f7;
-            padding: 15px;
+            padding: 12px;
             border-radius: 8px;
-            margin-top: 10px;
+            margin-top: 5px;
         }
         .btn-submit {
             background-color: var(--primary);
@@ -69,14 +100,37 @@
             border: none;
             cursor: pointer;
             font-weight: bold;
-            margin-top: 20px;
+            margin-top: 15px;
             transition: background 0.3s;
         }
         .btn-submit:hover {
             background-color: var(--accent);
         }
+        .stats-card {
+            background: #eef2f7;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border-right: 5px solid var(--primary);
+            font-size: 15px;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 14px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
         @media (max-width: 600px) {
-            .dimensions-grid {
+            .dimensions-grid, .row-grid {
                 grid-template-columns: 1fr;
             }
         }
@@ -85,66 +139,342 @@
 <body>
 
 <div class="container">
-    <h2>إضافة منتج جديد - معرض ميار</h2>
-    
-    <form id="productForm" onsubmit="saveProduct(event)">
-        <div class="form-group">
-            <label for="productName">اسم المنتج / الموديل:</label>
-            <input type="text" id="productName" required placeholder="مثال: مرتبة ريتش هوم / جولد سليب">
-        </div>
+    <h2>معرض ميار - نظام الإدارة الشامل</h2>
 
-        <div class="form-group">
-            <label for="productCategory">القسم:</label>
-            <select id="productCategory" onchange="toggleDimensions()" required>
-                <option value="">اختر القسم</option>
-                <option value="mattress">مراتب</option>
-                <option value="furniture">أثاث</option>
-                <option value="antiques">انتيكات وترابيزات</option>
-            </select>
-        </div>
+    <!-- شريط التنقل بين الأقسام -->
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('products')">إضافة منتج</button>
+        <button class="tab-btn" onclick="switchTab('expenses')">المصروفات والماليات</button>
+        <button class="tab-btn" onclick="switchTab('targets')">التارجت والأهداف</button>
+        <button class="tab-btn" onclick="switchTab('wholesale')">عملاء الجملة</button>
+        <button class="tab-btn" onclick="switchTab('analytics')">التحليلات والمبيعات</button>
+    </div>
 
-        <!-- قسم مقاسات المراتب (يظهر فقط عند اختيار مراتب) -->
-        <div class="form-group" id="mattressDimensionsSection" style="display: none;">
-            <label>مقاسات المرتبة (بالسنتيمتر):</label>
-            <div class="dimensions-grid">
-                <div>
-                    <label for="mattressWidth">العرض (100 - 220):</label>
-                    <input type="number" id="mattressWidth" min="100" max="220" step="1" placeholder="من 100 إلى 220">
-                </div>
-                <div>
-                    <label for="mattressHeight">الارتفاع (10 - 45):</label>
-                    <input type="number" id="mattressHeight" min="10" max="45" step="1" placeholder="من 10 إلى 45">
-                </div>
-                <div>
-                    <label for="mattressLength">الطول (190 - 230):</label>
-                    <input type="number" id="mattressLength" min="190" max="230" step="1" placeholder="من 190 إلى 230">
+    <!-- 1. قسم إضافة المنتجات والأقسام -->
+    <div id="products" class="section active">
+        <h3>إضافة منتج وتحديد الأقسام والمقاسات</h3>
+        <form id="productForm" onsubmit="saveProduct(event)">
+            <div class="form-group">
+                <label>اسم المنتج / الموديل:</label>
+                <input type="text" id="pName" required placeholder="مثال: مرتبة ريتش هوم / ترابيزة ستانلس">
+            </div>
+
+            <div class="form-group">
+                <label>القسم الرئيسي:</label>
+                <select id="pCategory" onchange="toggleCategoryDetails()" required>
+                    <option value="">اختر القسم</option>
+                    <option value="mattress">مراتب</option>
+                    <option value="furniture">أثاث</option>
+                    <option value="antiques">انتيكات وترابيزات</option>
+                </select>
+            </div>
+
+            <!-- تفاصيل المراتب ومقاساتها -->
+            <div class="form-group" id="mattressSec" style="display: none;">
+                <label>مقاسات المرتبة (سم):</label>
+                <div class="dimensions-grid">
+                    <div>
+                        <label>العرض (100-220):</label>
+                        <input type="number" id="mWidth" min="100" max="220" placeholder="160">
+                    </div>
+                    <div>
+                        <label>الارتفاع (10-45):</label>
+                        <input type="number" id="mHeight" min="10" max="45" placeholder="25">
+                    </div>
+                    <div>
+                        <label>الطول (190-230):</label>
+                        <input type="number" id="mLength" min="190" max="230" placeholder="200">
+                    </div>
                 </div>
             </div>
-        </div>
 
-        <div class="form-group">
-            <label for="productPrice">السعر (جنيه):</label>
-            <input type="number" id="productPrice" required placeholder="أدخل السعر">
-        </div>
+            <!-- تفاصيل الانتيكات والترابيزات -->
+            <div class="form-group" id="antiquesSec" style="display: none;">
+                <label>نوع الترابيزة / الأثاث:</label>
+                <select id="antiqueType">
+                    <option value="ترابيزة ستانلس">ترابيزة ستانلس</option>
+                    <option value="جزامة">جزامة</option>
+                    <option value="ترابيزة شاشة">ترابيزة شاشة</option>
+                    <option value="كونسول">كونسول</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
 
-        <button type="submit" class="btn-submit">حفظ المنتج</button>
-    </form>
+            <div class="row-grid">
+                <div class="form-group" style="margin:0;">
+                    <label>سعر الشراء:</label>
+                    <input type="number" id="pCost" required placeholder="التكلفة">
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label>سعر البيع:</label>
+                    <input type="number" id="pPrice" required placeholder="السعر">
+                </div>
+                <div class="form-group" style="margin:0;">
+                    <label>الكمية:</label>
+                    <input type="number" id="pQty" required value="1">
+                </div>
+            </div>
+
+            <button type="submit" class="btn-submit">حفظ المنتج في المخزن</button>
+        </form>
+    </div>
+
+    <!-- 2. قسم المصروفات والماليات -->
+    <div id="expenses" class="section">
+        <h3>تسجيل المصروفات ودورة رأس المال</h3>
+        <form id="expForm" onsubmit="saveExpense(event)">
+            <div class="form-group">
+                <label>نوع المصروف:</label>
+                <select id="expType" required>
+                    <option value="إيجار المعرض">إيجار المعرض</option>
+                    <option value="كهرباء">كهرباء</option>
+                    <option value="عمالة">عمالة / رواتب</option>
+                    <option value="نقل ومصاريف">نقل ومصاريف إدارية</option>
+                    <option value="أخرى">أخرى</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>المبلغ (جنيه):</label>
+                <input type="number" id="expAmount" required placeholder="المبلغ">
+            </div>
+            <div class="form-group">
+                <label>التاريخ (يوم / شهر / سنة):</label>
+                <input type="date" id="expDate" required>
+            </div>
+            <button type="submit" class="btn-submit">حفظ المصروف</button>
+        </form>
+
+        <div style="margin-top: 20px;">
+            <div class="stats-card">
+                <p>إجمالي رأس المال المستثمر: <span id="totalCapital">0</span> جنيه</p>
+                <p>إجمالي المصروفات: <span id="totalExpenses">0</span> جنيه</p>
+                <p>المصروفات الثابتة (إيجار + كهرباء + عمالة): <span id="fixedExpenses">0</span> جنيه</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. قسم التارجت والأهداف -->
+    <div id="targets" class="section">
+        <h3>تحديد ومتابعة التارجت (مبيعات وأرباح)</h3>
+        <form id="targetForm" onsubmit="saveTarget(event)">
+            <div class="form-group">
+                <label>تارجت المبيعات المستهدف (جنيه):</label>
+                <input type="number" id="targetSalesInput" required placeholder="مثال: 100000">
+            </div>
+            <div class="form-group">
+                <label>تارجت الأرباح المستهدف (جنيه):</label>
+                <input type="number" id="targetProfitInput" required placeholder="مثال: 20000">
+            </div>
+            <button type="submit" class="btn-submit">حفظ التارجت</button>
+        </form>
+
+        <div style="margin-top: 20px;">
+            <div class="stats-card">
+                <p>🎯 تارجت المبيعات المطلوب: <span id="displayTargetSales">0</span> جنيه</p>
+                <p>💰 تارجت الأرباح المستهدف: <span id="displayTargetProfit">0</span> جنيه</p>
+                <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">
+                <p>📈 المبيعات الحالية الفعلية: <span id="actualSales">0</span> جنيه</p>
+                <p>🏆 الأرباح الفعلية التقديرية: <span id="actualProfit">0</span> جنيه</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 4. قسم عملاء الجملة -->
+    <div id="wholesale" class="section">
+        <h3>إدارة عملاء الجملة والتفاصيل</h3>
+        <form id="clientForm" onsubmit="saveClient(event)">
+            <div class="form-group">
+                <label>اسم العميل / المعرض التجاري:</label>
+                <input type="text" id="clientName" required placeholder="مثال: معرض النور للأثاث">
+            </div>
+            <div class="form-group">
+                <label>رقم التليفون:</label>
+                <input type="text" id="clientPhone" required placeholder="01xxxxxxxx">
+            </div>
+            <div class="form-group">
+                <label>العنوان / المنطقة:</label>
+                <input type="text" id="clientAddress" placeholder="المدينة / المحافظة">
+            </div>
+            <div class="form-group">
+                <label>ملاحظات وتعاملات (مقاسات خاصة، أسعار تجاري، دفعات):</label>
+                <textarea id="clientNotes" rows="2" placeholder="تفاصيل التعامل التجاري..."></textarea>
+            </div>
+            <button type="submit" class="btn-submit">إضافة عميل الجملة</button>
+        </form>
+
+        <h4 style="margin-top: 20px;">قائمة عملاء الجملة</h4>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>الاسم / المعرض</th>
+                        <th>التليفون</th>
+                        <th>العنوان</th>
+                        <th>الملاحظات والتعاملات</th>
+                    </tr>
+                </thead>
+                <tbody id="clientsTableBody">
+                    <!-- تعبئة تلقائية -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 5. التحليلات والأصناف الأكثر مبيعا -->
+    <div id="analytics" class="section">
+        <h3>تحليل البيانات والأصناف والأكثر طلباً</h3>
+        <div class="stats-card">
+            <p>إجمالي المنتجات بالمخزون: <span id="totalProductsCount">0</span></p>
+            <p>أكثر قسم متوفر/نشط: <span id="topCategory">لا توجد بيانات</span></p>
+        </div>
+        <h4>سجل المخزون والمنتجات</h4>
+        <div style="overflow-x: auto;">
+            <table>
+                <thead>
+                    <tr>
+                        <th>المنتج</th>
+                        <th>القسم</th>
+                        <th>سعر البيع</th>
+                        <th>الكمية</th>
+                    </tr>
+                </thead>
+                <tbody id="productsTableBody">
+                    <!-- تعبئة تلقائية -->
+                </tbody>
+            </table>
+        </div>
+    </div>
+
 </div>
 
 <script>
-    function toggleDimensions() {
-        const category = document.getElementById('productCategory').value;
-        const dimsSection = document.getElementById('mattressDimensionsSection');
-        if (category === 'mattress') {
-            dimsSection.style.display = 'block';
-        } else {
-            dimsSection.style.display = 'none';
-        }
+    function switchTab(tabId) {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        event.currentTarget.classList.add('active');
+        updateDashboard();
     }
 
-    function saveProduct(event) {
-        event.preventDefault();
-        alert('تم حفظ المنتج بنجاح وتحديث مقاسات المراتب!');
+    function toggleCategoryDetails() {
+        const cat = document.getElementById('pCategory').value;
+        document.getElementById('mattressSec').style.display = (cat === 'mattress') ? 'block' : 'none';
+        document.getElementById('antiquesSec').style.display = (cat === 'antiques') ? 'block' : 'none';
+    }
+
+    function saveProduct(e) {
+        e.preventDefault();
+        const product = {
+            name: document.getElementById('pName').value,
+            category: document.getElementById('pCategory').value,
+            cost: parseFloat(document.getElementById('pCost').value),
+            price: parseFloat(document.getElementById('pPrice').value),
+            qty: parseInt(document.getElementById('pQty').value)
+        };
+        let products = JSON.parse(localStorage.getItem('mayar_products') || '[]');
+        products.push(product);
+        localStorage.setItem('mayar_products', JSON.stringify(products));
+        alert('تم حفظ المنتج بنجاح!');
+        document.getElementById('productForm').reset();
+        toggleCategoryDetails();
+    }
+
+    function saveExpense(e) {
+        e.preventDefault();
+        const expense = {
+            type: document.getElementById('expType').value,
+            amount: parseFloat(document.getElementById('expAmount').value),
+            date: document.getElementById('expDate').value
+        };
+        let expenses = JSON.parse(localStorage.getItem('mayar_expenses') || '[]');
+        expenses.push(expense);
+        localStorage.setItem('mayar_expenses', JSON.stringify(expenses));
+        alert('تم تسجيل المصروف بنجاح!');
+        document.getElementById('expForm').reset();
+        updateDashboard();
+    }
+
+    function saveTarget(e) {
+        e.preventDefault();
+        const target = {
+            sales: parseFloat(document.getElementById('targetSalesInput').value),
+            profit: parseFloat(document.getElementById('targetProfitInput').value)
+        };
+        localStorage.setItem('mayar_target', JSON.stringify(target));
+        alert('تم حفظ التارجت بنجاح!');
+        updateDashboard();
+    }
+
+    function saveClient(e) {
+        e.preventDefault();
+        const client = {
+            name: document.getElementById('clientName').value,
+            phone: document.getElementById('clientPhone').value,
+            address: document.getElementById('clientAddress').value,
+            notes: document.getElementById('clientNotes').value
+        };
+        let clients = JSON.parse(localStorage.getItem('mayar_wholesale_clients') || '[]');
+        clients.push(client);
+        localStorage.setItem('mayar_wholesale_clients', JSON.stringify(clients));
+        alert('تم إضافة عميل الجملة بنجاح!');
+        document.getElementById('clientForm').reset();
+        updateDashboard();
+    }
+
+    function updateDashboard() {
+        let products = JSON.parse(localStorage.getItem('mayar_products') || '[]');
+        let expenses = JSON.parse(localStorage.getItem('mayar_expenses') || '[]');
+        let target = JSON.parse(localStorage.getItem('mayar_target') || '{"sales":0, "profit":0}');
+        let clients = JSON.parse(localStorage.getItem('mayar_wholesale_clients') || '[]');
+
+        let totalCap = products.reduce((sum, p) => sum + (p.cost * p.qty), 0);
+        let totalExp = expenses.reduce((sum, e) => sum + e.amount, 0);
+        let fixedExp = expenses.filter(e => ['إيجار المعرض', 'كهرباء', 'عمالة'].includes(e.type))
+                               .reduce((sum, e) => sum + e.amount, 0);
+
+        document.getElementById('totalCapital').innerText = totalCap.toLocaleString();
+        document.getElementById('totalExpenses').innerText = totalExp.toLocaleString();
+        document.getElementById('fixedExpenses').innerText = fixedExp.toLocaleString();
+
+        document.getElementById('displayTargetSales').innerText = target.sales.toLocaleString();
+        document.getElementById('displayTargetProfit').innerText = target.profit.toLocaleString();
+
+        // حسابات تقريبية للمبيعات والأرباح بناء على المخزون الحالي
+        let estSales = products.reduce((sum, p) => sum + (p.price * p.qty), 0);
+        let estProfit = products.reduce((sum, p) => sum + ((p.price - p.cost) * p.qty), 0) - totalExp;
+        document.getElementById('actualSales').innerText = estSales.toLocaleString();
+        document.getElementById('actualProfit').innerText = estProfit.toLocaleString();
+
+        document.getElementById('totalProductsCount').innerText = products.length;
+
+        // جدول المنتجات
+        let tbody = document.getElementById('productsTableBody');
+        tbody.innerHTML = '';
+        products.forEach(p => {
+            let catName = p.category === 'mattress' ? 'مراتب' : (p.category === 'furniture' ? 'أثاث' : 'انتيكات وترابيزات');
+            tbody.innerHTML += `<tr>
+                <td>${p.name}</td>
+                <td>${catName}</td>
+                <td>${p.price} ج.م</td>
+                <td>${p.qty}</td>
+            </tr>`;
+        });
+
+        // جدول عملاء الجملة
+        let cBody = document.getElementById('clientsTableBody');
+        cBody.innerHTML = '';
+        clients.forEach(c => {
+            cBody.innerHTML += `<tr>
+                <td>${c.name}</td>
+                <td>${c.phone}</td>
+                <td>${c.address}</td>
+                <td>${c.notes}</td>
+            </tr>`;
+        });
+    }
+
+    window.onload = function() {
+        updateDashboard();
     }
 </script>
 
