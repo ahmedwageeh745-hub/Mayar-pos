@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>معرض ميار - إدارة المخزون والمبيعات</title>
+    <style>
+        :root {
+            --primary: #1e293b;
+            --accent: #d4af37;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --text: #334155;
+            --border: #e2e8f0;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: var(--card-bg);
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        h2 {
+            text-align: center;
+            color: var(--primary);
+            margin-bottom: 5px;
+        }
+        .subtitle {
+            text-align: center;
+            color: var(--accent);
+            font-size: 14px;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+        .form-group {
+            margin-bottom: 12px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            font-size: 13px;
+        }
+        input, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            box-sizing: border-box;
+            font-size: 14px;
+        }
+        .dimensions-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 8px;
+        }
+        button {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 12px;
+            width: 100%;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:active {
+            background-color: #0f172a;
+        }
+        .table-container {
+            margin-top: 20px;
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 13px;
+        }
+        th, td {
+            border: 1px solid var(--border);
+            padding: 8px;
+            text-align: center;
+        }
+        th {
+            background-color: var(--primary);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>معرض ميار</h2>
+    <div class="subtitle">إدارة المخزون والمقاسات والمبيعات</div>
+
+    <div class="form-group">
+        <label>اسم المنتَج / الصنف</label>
+        <input type="text" id="pName" placeholder="مثال: مرتبة يانسن / انجلندر / ريتش هوم">
+    </div>
+
+    <div class="form-group">
+        <label>القسم / الماركة</label>
+        <select id="pCategory">
+            <option value="مراتب">مراتب (يانسن، انجلندر، ريتش هوم، جولد سليب)</option>
+            <option value="أثاث ومقاعد">أثاث وترابيزات ستانلس</option>
+            <option value="مفروشات">مفروشات ووسائد</option>
+        </select>
+    </div>
+
+    <div class="form-group">
+        <label>المقاسات (الطول × العرض × الارتفاع)</label>
+        <div class="dimensions-grid">
+            <input type="text" id="pLength" placeholder="الطول (سم)">
+            <input type="text" id="pWidth" placeholder="العرض (سم)">
+            <input type="text" id="pHeight" placeholder="الارتفاع (سم)">
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label>السعر (جنية)</label>
+        <input type="number" id="pPrice" placeholder="أدخل السعر">
+    </div>
+
+    <button onclick="addProduct()">إضافة للمخزون</button>
+
+    <div class="table-container">
+        <h3>قائمة المخزون الحالي</h3>
+        <table id="inventoryTable">
+            <thead>
+                <tr>
+                    <th>المنتج</th>
+                    <th>القسم</th>
+                    <th>المقاس (ط×ع×ارتفاع)</th>
+                    <th>السعر</th>
+                </tr>
+            </thead>
+            <tbody>
+                <!-- المنتجات تظهر هنا -->
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+    function addProduct() {
+        const name = document.getElementById('pName').value;
+        const category = document.getElementById('pCategory').value;
+        const length = document.getElementById('pLength').value;
+        const width = document.getElementById('pWidth').value;
+        const height = document.getElementById('pHeight').value;
+        const price = document.getElementById('pPrice').value;
+
+        if(!name || !price) {
+            alert('برجاء إدخال اسم المنتج والسعر على الأقل');
+            return;
+        }
+
+        const table = document.getElementById('inventoryTable').getElementsByTagName('tbody')[0];
+        const newRow = table.insertRow();
+
+        const dimText = (length || width || height) ? `${length || '-'} × ${width || '-'} × ${height || '-'}` : 'قياسي';
+
+        newRow.innerHTML = `
+            <td>${name}</td>
+            <td>${category}</td>
+            <td>${dimText}</td>
+            <td>${price} ج.م</td>
+        `;
+
+        // Clear inputs
+        document.getElementById('pName').value = '';
+        document.getElementById('pLength').value = '';
+        document.getElementById('pWidth').value = '';
+        document.getElementById('pHeight').value = '';
+        document.getElementById('pPrice').value = '';
+    }
+</script>
+
+</body>
+</html>
